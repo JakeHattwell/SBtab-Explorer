@@ -17,6 +17,26 @@ class MainApplication():
         #configuring master
         config = {"title":"SBTabExplorer", "version":"[Version: 1]"}
         self.master = master
+        self.tkcss = [
+            #light
+            {  
+                "BASE":"gray80",
+                "DARK":"gray90",
+                "DARKER":"gray95",
+                "LIGHT":"gray75",
+                "CURSOR":"black"
+            },
+            #dark
+            {
+                "BASE":"gray25",
+                "DARK":"gray15",
+                "DARKER":"gray10",
+                "LIGHT":"gray35",
+                "CURSOR":"white"
+            }
+            ]
+        self.dark_scheme = True
+        self.cs = self.tkcss[self.dark_scheme]
         self.font = ("systemfixed",10)
         self.master.title(config["title"] + " " +config["version"])
         self.master.state("zoomed")
@@ -39,7 +59,7 @@ SBTabExplorer Version 1
 Created by Jake Hattwell
 """
         help_menu.add_command(label="About", command=lambda title="SBTabExplorer",msg=text : messagebox.showinfo(title=title,message=msg))
-        help_menu.add_command(label="GitHub",command=lambda url="https://github.com/jakehattwell/SBtab-explorer": webbrowser.open_new_tab(url))
+        help_menu.add_command(label="GitHub (opens browser)",command=lambda url="https://github.com/jakehattwell/SBtab-explorer": webbrowser.open_new_tab(url))
         self.menubar.add_cascade(label="File", menu=file_menu)
         self.menubar.add_cascade(label="Help",menu=help_menu)
         self.master.config(menu=self.menubar)
@@ -47,7 +67,7 @@ Created by Jake Hattwell
         self.notebook = ttk.Notebook(self.master)
         self.notebook.pack(fill=tk.BOTH,expand=True)
         #main display window
-        self.window_frame = tk.Frame(self.notebook,bd=2, relief=tk.SUNKEN,bg="gray25")
+        self.window_frame = tk.Frame(self.notebook,bd=2, relief=tk.SUNKEN,bg=self.cs["BASE"])
         self.window_frame.pack(fill=tk.BOTH,expand=True)
         self.window_frame.columnconfigure(0, weight = 3)
         self.window_frame.columnconfigure(1, weight = 1)
@@ -55,7 +75,7 @@ Created by Jake Hattwell
         self.window_frame.rowconfigure(1, weight = 1)
         self.notebook.add(self.window_frame,text="Home")
         #main UI window
-        self.ui_frame= tk.Frame(self.window_frame, bd=1, relief=tk.SOLID,highlightbackground='gray35',highlightcolor="gray10")
+        self.ui_frame= tk.Frame(self.window_frame, bd=1, relief=tk.SOLID,highlightbackground=self.cs["LIGHT"],highlightcolor=self.cs["DARKER"])
         self.ui_frame.grid(row=0,column=0,sticky = "nesw",rowspan=2)
 
         self.ui_frame.columnconfigure(0,weight=1)
@@ -63,18 +83,18 @@ Created by Jake Hattwell
         self.ui_frame.rowconfigure(0,weight=0)
         self.ui_frame.rowconfigure(1,weight=1)
 
-        self.load_prompt = tk.Label(self.ui_frame, text="Use the file menu to load a SBtab folder.",bg='gray35',fg="white")
+        self.load_prompt = tk.Label(self.ui_frame, text="Use the file menu to load a SBtab folder.",bg=self.cs["LIGHT"],fg=self.cs["CURSOR"])
         self.load_prompt.grid(row=0,column=0, sticky=tk.NE+tk.SW,columnspan=2)
 
         self.wscrollbar = tk.Scrollbar(self.ui_frame)
         self.wscrollbar.grid(row=1,column=1,sticky="ns")
 
-        self.work_canvas = tk.Canvas(self.ui_frame,bd=2, relief=tk.SUNKEN,yscrollcommand=self.wscrollbar.set,background='gray15',highlightbackground='gray35',highlightcolor="gray10")
-        self.work_canvas.config(width=self.ui_frame.winfo_width()-self.wscrollbar.winfo_width(),bg="gray15")
-        self.wscrollbar.config(command=self.work_canvas.yview,highlightbackground='gray35',highlightcolor="gray10",bg='gray35',troughcolor="gray15")
+        self.work_canvas = tk.Canvas(self.ui_frame,bd=2, relief=tk.SUNKEN,yscrollcommand=self.wscrollbar.set,background=self.cs["DARK"],highlightbackground=self.cs["LIGHT"],highlightcolor=self.cs["DARKER"])
+        self.work_canvas.config(width=self.ui_frame.winfo_width()-self.wscrollbar.winfo_width(),bg=self.cs["DARK"])
+        self.wscrollbar.config(command=self.work_canvas.yview,highlightbackground=self.cs["LIGHT"],highlightcolor=self.cs["DARKER"],bg=self.cs["LIGHT"],troughcolor=self.cs["DARK"])
         self.work_canvas.configure(scrollregion=self.work_canvas.bbox("all"))
         self.work_canvas.grid(row=1,column=0,sticky = "nesw")
-        self.work_frame = tk.Frame(self.work_canvas,bg="gray15")
+        self.work_frame = tk.Frame(self.work_canvas,bg=self.cs["DARK"])
         self.work_frame.columnconfigure(0,weight=1)
         self.work_canvas.create_window((0,0),window=self.work_frame,anchor='nw')
         self.work_frame.bind("<Configure>", self.on_frame_configure)
@@ -83,18 +103,18 @@ Created by Jake Hattwell
 
         self.CanvasActive = False
 
-        self.tool_frame = tk.Frame(self.window_frame,bd=2,relief=tk.SUNKEN,highlightbackground='gray35',highlightcolor="gray10",bg='gray20')
+        self.tool_frame = tk.Frame(self.window_frame,bd=2,relief=tk.SUNKEN,highlightbackground=self.cs["LIGHT"],highlightcolor=self.cs["DARKER"],bg=self.cs["BASE"])
         self.tool_frame.grid(row=0,column=1,sticky="nesw")
 
-        self.text_frame = tk.Frame(self.window_frame,bd=2,relief=tk.SUNKEN,highlightbackground='gray35',highlightcolor="gray10",bg='gray20')
+        self.text_frame = tk.Frame(self.window_frame,bd=2,relief=tk.SUNKEN,highlightbackground=self.cs["LIGHT"],highlightcolor=self.cs["DARKER"],bg=self.cs["BASE"])
         self.text_frame.grid(row=1,column=1,sticky="nesw")
-        self.text_box = tk.Text(self.text_frame,width=20,padx=10,wrap=tk.WORD,bg='gray20',fg="white",font=self.font)
+        self.text_box = tk.Text(self.text_frame,width=20,padx=10,wrap=tk.WORD,bg=self.cs["BASE"],fg=self.cs["CURSOR"],font=self.font)
         self.text_box.grid(row=0,column=0,sticky="nesw")
         self.text_frame.columnconfigure(0, weight = 1)
         self.text_frame.rowconfigure(0, weight = 1)
-        self.footer = tk.Frame(self.master,bg="gray35",width=0,height=16)
+        self.footer = tk.Frame(self.master,bg=self.cs["LIGHT"],width=0,height=16)
         self.footer.pack(side=tk.LEFT)
-        self.placeholder=tk.Frame(self.master,bg="gray35",width=self.master.winfo_width(),height=16)
+        self.placeholder=tk.Frame(self.master,bg=self.cs["LIGHT"],width=self.master.winfo_width(),height=16)
         self.placeholder.pack(side=tk.RIGHT)
         
 
@@ -106,15 +126,15 @@ Created by Jake Hattwell
         success = self.workspace.loadFolder(folder)
         if success:
             self.load_prompt.destroy()
-            self.search_frame = tk.Frame(self.ui_frame,bd=2,relief=tk.SUNKEN,highlightcolor="gray10",bg='gray35')
+            self.search_frame = tk.Frame(self.ui_frame,bd=2,relief=tk.SUNKEN,highlightcolor=self.cs["DARKER"],bg=self.cs["LIGHT"])
             search_var = tk.StringVar()
-            self.search_box = tk.Entry(self.search_frame,textvariable=search_var,bg="gray20",fg="white",insertbackground="white")
+            self.search_box = tk.Entry(self.search_frame,textvariable=search_var,bg=self.cs["DARK"],fg=self.cs["CURSOR"],insertbackground=self.cs["CURSOR"])
             search_var.set("Search Text")
             self.search_box.bind('<FocusIn>', self.on_entry_click)
             self.search_box.bind('<FocusOut>', self.on_focusout)
             self.search_box.bind('<Return>', self.search_model_interface)
             self.search_box.grid(row = 0,column=0,sticky = "nesw")
-            self.search_label = tk.Label(self.search_frame,text="Type and press enter to search",bg="gray35",fg="white")
+            self.search_label = tk.Label(self.search_frame,text="Type and press enter to search",bg=self.cs["LIGHT"],fg=self.cs["CURSOR"])
             self.search_label.grid(row=0,column=1,sticky="nesw")
             
             self.search_frame.columnconfigure(0,weight=3)
@@ -125,8 +145,8 @@ Created by Jake Hattwell
             self.size_text = "\n".join([str(key)+": "+str(val)+" entries" for key,val in self.size.items()])
             self.size_text = "\n".join(["Dataset has been loaded!",self.size_text])
             messagebox.showinfo("SBTabExplorer",self.size_text)
-            self.footer.config(width=0,bg="gray35")
-            self.placeholder.config(bg="gray35",width=self.master.winfo_width(),height=16)
+            self.footer.config(width=0,bg=self.cs["LIGHT"])
+            self.placeholder.config(bg=self.cs["LIGHT"],width=self.master.winfo_width(),height=16)
             self.master.focus_set()
 
 
@@ -143,12 +163,12 @@ Created by Jake Hattwell
         if self.search_box.get() == "Search Text":
             self.search_box.delete(0, "end") # delete all the text in the entry
             self.search_box.insert(0, '') #Insert blank for user input      
-            self.search_box.config(fg = 'white')      
+            self.search_box.config(fg = self.cs["CURSOR"])      
 
     def on_focusout(self,event):
         if self.search_box.get() == '':
             self.search_box.insert(0, 'Search Text')
-            self.search_box.config(fg = 'grey')
+            self.search_box.config(fg = self.cs["BASE"])
 
     def search_model_interface(self,event=None):
 
@@ -168,10 +188,10 @@ Created by Jake Hattwell
             self.info = {}
             for key,result in results.items():
                 text = self.workspace.prettyPrint([result[0],result[1]])
-                self.info["key"+str(row)+"L"] = tk.Label(self.work_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg="gray15",fg="white",padx=10,pady=5)
+                self.info["key"+str(row)+"L"] = tk.Label(self.work_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg=self.cs["DARK"],fg=self.cs["CURSOR"],padx=10,pady=5)
                 self.info["key"+str(row)+"L"].grid(row = row,column = 1,sticky="nesw",columnspan=1)
                 self.info["key"+str(row)+"L"].bind("<MouseWheel>", lambda event: self.work_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
-                self.info["key"+str(row)+"B"] = tk.Button(self.work_frame,font=self.font,padx=10,text = "Open",justify="center",bd=2,relief="raised",anchor="e",fg="white",bg="gray35",command = lambda result=result:self.display_data(result)) #
+                self.info["key"+str(row)+"B"] = tk.Button(self.work_frame,font=self.font,padx=10,text = "Open",justify="center",bd=2,relief="raised",anchor="e",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = lambda result=result:self.display_data(result)) #
                 self.info["key"+str(row)+"B"].grid(row = row,column = 0,sticky="nesw")
                 self.info["key"+str(row)+"B"].bind("<MouseWheel>", lambda event: self.work_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
                 self.info["key"+str(row)+"D"] = result[5]
@@ -195,7 +215,7 @@ Created by Jake Hattwell
                 self.notebook.select(selection)
         else:
             self.pages[data[1]] = tk.Frame(self.notebook)
-            self.pages[data[1]].config(bg="gray18")
+            self.pages[data[1]].config(bg=self.cs["DARK"])
             self.pages[data[1]].data=data
             window_text=data[1]
             self.pages[data[1]].columnconfigure(0,weight=3)
@@ -204,25 +224,25 @@ Created by Jake Hattwell
             self.displayFields[window_text]={}
             self.notebook.add(self.pages[data[1]],text=window_text,sticky="nesw")
             row=0
-            info_frame = tk.Frame(self.pages[data[1]],bg="gray18")
+            info_frame = tk.Frame(self.pages[data[1]],bg=self.cs["DARK"])
             info_frame.grid(row=0,column=0,sticky="NESW")
             info_frame.columnconfigure(1,weight=1)
-            btn1 = tk.Button(info_frame,text="Save and Continue",fg="white",bg="gray35",command = self.saveData) #
+            btn1 = tk.Button(info_frame,text="Save and Continue",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = self.saveData) #
             btn1.grid(row=row,column=0,sticky="nesw",columnspan=2)
             row += 1
             # btn2 = tk.Button(window,text="Save and Close") #,command = self.saveAndClose
             # btn2.grid(row=row,column=0,sticky="nesw")
             # row += 1
-            btn3 = tk.Button(info_frame,text="Exit",fg="white",bg="gray35",command = self.delete_tab)
+            btn3 = tk.Button(info_frame,text="Exit",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = self.delete_tab)
             btn3.grid(row=row,column=0,sticky="nesw",columnspan=2)
             row += 1
             for key,val in data[5].items():
                 if key != None:
                     title = key.capitalize()
-                fieldLabel = tk.Label(info_frame,text=title,justify="left",bg="gray25",fg="white",padx=5)
+                fieldLabel = tk.Label(info_frame,text=title,justify="left",bg=self.cs["BASE"],fg=self.cs["CURSOR"],padx=5)
                 fieldLabel.grid(row=row,column=0,sticky="NESW")
                 text = tk.StringVar()
-                self.displayFields[window_text][key] = tk.Entry(info_frame,textvariable=text,bg="grey15",fg="white",disabledbackground="grey15",insertbackground="white")
+                self.displayFields[window_text][key] = tk.Entry(info_frame,textvariable=text,bg=self.cs["DARK"],fg=self.cs["CURSOR"],disabledbackground=self.cs["DARK"],insertbackground=self.cs["CURSOR"])
                 text.set(val)
                 if title == "!id":
                     self.displayFields[window_text][key].config(state='disabled')
@@ -245,14 +265,14 @@ Created by Jake Hattwell
             tempwscrollbarx = tk.Scrollbar(linker_frame,orient="horizontal")
             tempwscrollbarx.grid(row=1,column=0,sticky="ew")
         #
-            tempwork_canvas = tk.Canvas(linker_frame,bd=2, relief=tk.SUNKEN,background='gray15',highlightbackground='gray35',highlightcolor="gray10",yscrollcommand=tempwscrollbar.set,xscrollcommand=tempwscrollbarx.set)
-            tempwork_canvas.config(width=linker_frame.winfo_width()-tempwscrollbar.winfo_width(),height=linker_frame.winfo_height()-tempwscrollbar.winfo_height(),bg="gray15")
+            tempwork_canvas = tk.Canvas(linker_frame,bd=2, relief=tk.SUNKEN,background=self.cs["DARK"],highlightbackground=self.cs["LIGHT"],highlightcolor=self.cs["DARKER"],yscrollcommand=tempwscrollbar.set,xscrollcommand=tempwscrollbarx.set)
+            tempwork_canvas.config(width=linker_frame.winfo_width()-tempwscrollbar.winfo_width(),height=linker_frame.winfo_height()-tempwscrollbar.winfo_height(),bg=self.cs["DARK"])
 
-            tempwscrollbar.config(command=tempwork_canvas.yview,highlightbackground='gray35',highlightcolor="gray10",bg='gray35',troughcolor="gray15")
-            tempwscrollbarx.config(command=tempwork_canvas.xview,highlightbackground='gray35',highlightcolor="gray10",bg='gray35',troughcolor="gray15")
+            tempwscrollbar.config(command=tempwork_canvas.yview,highlightbackground=self.cs["LIGHT"],highlightcolor=self.cs["DARKER"],bg=self.cs["LIGHT"],troughcolor=self.cs["DARK"])
+            tempwscrollbarx.config(command=tempwork_canvas.xview,highlightbackground=self.cs["LIGHT"],highlightcolor=self.cs["DARKER"],bg=self.cs["LIGHT"],troughcolor=self.cs["DARK"])
             
             tempwork_canvas.grid(row=0,column=0,sticky = "nesw")
-            tempwork_frame = tk.Frame(tempwork_canvas,bg="gray15")
+            tempwork_frame = tk.Frame(tempwork_canvas,bg=self.cs["DARK"])
             tempwork_frame.columnconfigure(0,weight=1)
             tempwork_frame.rowconfigure(0,weight=1)
             tempwork_canvas.create_window((0,0),window=tempwork_frame,anchor='nw')
@@ -265,10 +285,10 @@ Created by Jake Hattwell
             self.pages[data[1]+"data"] = {}
             for key,result in results.items():
                 text = self.workspace.prettyPrint([result[0],result[1]])
-                self.pages[data[1]+"data"]["key"+str(row)+"L"] = tk.Label(tempwork_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg="gray15",fg="white",padx=10,pady=5)
+                self.pages[data[1]+"data"]["key"+str(row)+"L"] = tk.Label(tempwork_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg=self.cs["DARK"],fg=self.cs["CURSOR"],padx=10,pady=5)
                 self.pages[data[1]+"data"]["key"+str(row)+"L"].grid(row = row,column = 1,sticky="nesw",columnspan=1)
                 self.pages[data[1]+"data"]["key"+str(row)+"L"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
-                self.pages[data[1]+"data"]["key"+str(row)+"B"] = tk.Button(tempwork_frame,font=self.font,padx=10,text = "Open",justify="center",bd=2,relief="raised",anchor="e",fg="white",bg="gray35",command = lambda result=result:self.display_data(result)) #
+                self.pages[data[1]+"data"]["key"+str(row)+"B"] = tk.Button(tempwork_frame,font=self.font,padx=10,text = "Open",justify="center",bd=2,relief="raised",anchor="e",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = lambda result=result:self.display_data(result)) #
                 self.pages[data[1]+"data"]["key"+str(row)+"B"].grid(row = row,column = 0,sticky="nesw")
                 self.pages[data[1]+"data"]["key"+str(row)+"B"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
                 self.pages[data[1]+"data"]["key"+str(row)+"D"] = result[5]
@@ -286,10 +306,10 @@ Created by Jake Hattwell
                         result = ["Compound",i,"","","",results]
                         if results["!ID"] == i and "key"+results["!ID"]+"D" not in self.pages[data[1]+"data"]:
                             text = self.workspace.prettyPrint(["Compound",results["!ID"]])
-                            self.pages[data[1]+"data"]["key"+str(row)+"mL"] = tk.Label(tempwork_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg="gray15",fg="white",padx=10,pady=5)
+                            self.pages[data[1]+"data"]["key"+str(row)+"mL"] = tk.Label(tempwork_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg=self.cs["DARK"],fg=self.cs["CURSOR"],padx=10,pady=5)
                             self.pages[data[1]+"data"]["key"+str(row)+"mL"].grid(row = row,column = 1,sticky="nesw",columnspan=1)
                             self.pages[data[1]+"data"]["key"+str(row)+"mL"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
-                            self.pages[data[1]+"data"]["key"+str(row)+"mB"] = tk.Button(tempwork_frame,font=self.font,padx=10,text = "Open",justify="center",bd=2,relief="raised",anchor="e",fg="white",bg="gray35",command = lambda result=result:self.display_data(result)) #
+                            self.pages[data[1]+"data"]["key"+str(row)+"mB"] = tk.Button(tempwork_frame,font=self.font,padx=10,text = "Open",justify="center",bd=2,relief="raised",anchor="e",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = lambda result=result:self.display_data(result)) #
                             self.pages[data[1]+"data"]["key"+str(row)+"mB"].grid(row = row,column = 0,sticky="nesw")
                             self.pages[data[1]+"data"]["key"+str(row)+"mB"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
                             self.pages[data[1]+"data"]["key"+str(row)+"mD"] = result[5]
@@ -297,13 +317,6 @@ Created by Jake Hattwell
                     except:
                         pass
             self.master.update()
-
-
-
-
-
-
-
             self.notebook.select(self.notebook.index("end")-1)
             
 
@@ -344,28 +357,28 @@ Created by Jake Hattwell
         popup = tk.Toplevel()
         popup.title(config["title"] + " " +config["version"])
         popup.focus_set()
-        data_frame = tk.Frame(popup,bg="gray15")
+        data_frame = tk.Frame(popup,bg=self.cs["DARK"])
         data_frame.pack(fill=tk.BOTH,expand=True)
         data_frame.columnconfigure(0,weight=1)
         data_frame.columnconfigure(1,weight=3)
-        info_label = tk.Label(data_frame,bg="gray15",fg="white",text="Enter your details")
+        info_label = tk.Label(data_frame,self.cs["DARK"],fg=self.cs["CURSOR"],text="Enter your details")
         info_label.grid(row=0,column=0,columnspan=2)
         
         objects = {}
         attribs = ["Name","Institution","Curator ID","Email Address","Summary of changes"]
         row=1
         for i in attribs:
-            objects[i+"L"] = tk.Label(data_frame,text=i,bg="gray20",fg="white",font=self.font)
+            objects[i+"L"] = tk.Label(data_frame,text=i,bg=self.cs["BASE"],fg=self.cs["CURSOR"],font=self.font)
             objects[i+"L"].grid(column=0,row=row,sticky="nesw")
             if i == "Summary of changes":
-                objects[i+"E"] = ScrolledText(data_frame,bg="gray20",fg="white",height=10,font=self.font,insertbackground="white")
+                objects[i+"E"] = ScrolledText(data_frame,bg=self.cs["BASE"],fg=self.cs["CURSOR"],height=10,font=self.font,insertbackground=self.cs["CURSOR"])
             else:
-                objects[i+"E"] = tk.Text(data_frame,bg="gray20",fg="white",height=1,font=self.font,insertbackground="white")
+                objects[i+"E"] = tk.Text(data_frame,bg=self.cs["BASE"],fg=self.cs["CURSOR"],height=1,font=self.font,insertbackground=self.cs["CURSOR"])
             
             objects[i+"E"].grid(column=1,row=row,sticky="nesw")
             objects[i+"E"].bind('<Tab>', lambda e, t=objects[i+"E"]: focusNext(t))        
             row += 1
-        submit_button = tk.Button(data_frame,text="Submit",bg="gray35",fg="white",font=self.font,command=_submit)
+        submit_button = tk.Button(data_frame,text="Submit",bg=self.cs["LIGHT"],fg=self.cs["CURSOR"],font=self.font,command=_submit)
         submit_button.grid(column=0,row=row,columnspan=2,sticky="nesw")
 
 
@@ -387,8 +400,8 @@ Created by Jake Hattwell
             time.sleep(0.05)
             count+=1
         messagebox.showinfo("SBTabExplorer","Saved!")
-        self.footer.config(width=0,bg="gray35")
-        self.placeholder.config(bg="gray35",width=self.master.winfo_width(),height=16)
+        self.footer.config(width=0,bg=self.cs["LIGHT"])
+        self.placeholder.config(bg=self.cs["LIGHT"],width=self.master.winfo_width(),height=16)
 
 
 root = tk.Tk()
