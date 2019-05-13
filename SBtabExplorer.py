@@ -7,7 +7,7 @@ import webbrowser
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 
-from resources.SBTabReader import modelSystem
+from resources.SBtabReader import modelSystem
 
 #from tkinter import ttk
 
