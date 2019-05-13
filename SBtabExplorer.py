@@ -47,7 +47,8 @@ class MainApplication():
         self.pages = {}
         self.menubar = tk.Menu(self.master)
         file_menu = tk.Menu(self.menubar,tearoff=0)
-        file_menu.add_command(label="Open", command=self.open_folder)
+        file_menu.add_command(label="Open xlsx", command=lambda x = "xlsx":self.open_folder(x))
+        file_menu.add_command(label="Open tsv", command=lambda x = "tsv":self.open_folder(x))
         file_menu.add_command(label="Save As", command= lambda x=True: self.memoryDump(x))
         file_menu.add_command(label="Submit",command=self.emailform)
         file_menu.add_separator()
@@ -120,10 +121,10 @@ Created by Jake Hattwell
 
         
 
-    def open_folder(self):
+    def open_folder(self,filetype):
         self.workspace = modelSystem(self)
         folder = tk.filedialog.askdirectory()
-        success = self.workspace.loadFolder(folder)
+        success = self.workspace.load_folder(folder,filetype)
         if success:
             self.load_prompt.destroy()
             self.search_frame = tk.Frame(self.ui_frame,bd=2,relief=tk.SUNKEN,highlightcolor=self.cs["DARKER"],bg=self.cs["LIGHT"])
