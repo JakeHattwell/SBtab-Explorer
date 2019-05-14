@@ -8,6 +8,7 @@ from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 
 from resources.SBtabReader import modelSystem
+import settings
 
 #from tkinter import ttk
 
@@ -35,8 +36,8 @@ class MainApplication():
                 "CURSOR":"white"
             }
             ]
-        self.dark_scheme = True
-        self.cs = self.tkcss[self.dark_scheme]
+
+        self.cs = self.tkcss[settings.DARK_THEME]
         self.font = ("systemfixed",10)
         self.master.title(config["title"] + " " +config["version"])
         self.master.state("zoomed")
@@ -47,10 +48,19 @@ class MainApplication():
         self.pages = {}
         self.menubar = tk.Menu(self.master)
         file_menu = tk.Menu(self.menubar,tearoff=0)
-        file_menu.add_command(label="Open xlsx", command=lambda x = "xlsx":self.open_folder(x))
-        file_menu.add_command(label="Open tsv", command=lambda x = "tsv":self.open_folder(x))
-        file_menu.add_command(label="Save As", command= lambda x=True: self.memoryDump(x))
-        file_menu.add_command(label="Submit",command=self.emailform)
+        open_menu = tk.Menu(file_menu,tearoff=0)
+        open_menu.add_command(label="Open XLSX", command=lambda x = "xlsx":self.open_folder(x))
+        open_menu.add_command(label="Open TSV", command=lambda x = "tsv":self.open_folder(x))
+        file_menu.add_cascade(label="Open",menu=open_menu)
+        save_menu = tk.Menu(file_menu,tearoff=0)
+        save_menu.add_command(label="Save XLSX", command= lambda x=False: self.memory_dump(x))
+        save_menu.add_command(label="Save TSV", command= lambda x=False,mode="tsv": self.memory_dump(x,mode))
+        file_menu.add_cascade(label="Save",menu=save_menu)
+        saveas_menu = tk.Menu(file_menu,tearoff=0)
+        saveas_menu.add_command(label="Save As XLSX", command= lambda x=True: self.memory_dump(x))
+        saveas_menu.add_command(label="Save As TSV", command= lambda x=True,mode="tsv": self.memory_dump(x,mode))
+        file_menu.add_cascade(label="Save As",menu=saveas_menu)
+        file_menu.add_command(label="Submit",command=self.email_form)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=root.quit)
         help_menu = tk.Menu(self.menubar,tearoff=0)
@@ -118,13 +128,12 @@ Created by Jake Hattwell
         self.placeholder=tk.Frame(self.master,bg=self.cs["LIGHT"],width=self.master.winfo_width(),height=16)
         self.placeholder.pack(side=tk.RIGHT)
         
-
         
 
     def open_folder(self,filetype):
         self.workspace = modelSystem(self)
-        folder = tk.filedialog.askdirectory()
-        success = self.workspace.load_folder(folder,filetype)
+        self.folder = tk.filedialog.askdirectory()
+        success = self.workspace.load_folder(self.folder,filetype)
         if success:
             self.load_prompt.destroy()
             self.search_frame = tk.Frame(self.ui_frame,bd=2,relief=tk.SUNKEN,highlightcolor=self.cs["DARKER"],bg=self.cs["LIGHT"])
@@ -228,7 +237,7 @@ Created by Jake Hattwell
             info_frame = tk.Frame(self.pages[data[1]],bg=self.cs["DARK"])
             info_frame.grid(row=0,column=0,sticky="NESW")
             info_frame.columnconfigure(1,weight=1)
-            btn1 = tk.Button(info_frame,text="Save and Continue",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = self.saveData) #
+            btn1 = tk.Button(info_frame,text="Save and Continue",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = self.save_data) #
             btn1.grid(row=row,column=0,sticky="nesw",columnspan=2)
             row += 1
             # btn2 = tk.Button(window,text="Save and Close") #,command = self.saveAndClose
@@ -321,8 +330,9 @@ Created by Jake Hattwell
             self.notebook.select(self.notebook.index("end")-1)
             
 
-    def saveData(self):
+    def save_data(self):
         for key in self.pages[self.notebook.tab(self.notebook.select(),"text")].data[5]:
+            # don't ask.
             self.workspace.tables[self.pages[self.notebook.tab(self.notebook.select(),"text")].data[0]].data[self.pages[self.notebook.tab(self.notebook.select(),"text")].data[1]][key] = self.displayFields[self.pages[self.notebook.tab(self.notebook.select(),"text")].data[1]][key].get()
         messagebox.showinfo("SBTabExplorer","Saved!\nMake sure you save using the File Menu as well.")
 
@@ -334,7 +344,7 @@ Created by Jake Hattwell
         self.notebook.forget(self.notebook.select())
         self.pages.pop(name)
     
-    def emailform(self):
+    def email_form(self):
 
         def _submit():
             responses = [objects[i+"E"].get(1.0,tk.END) for i in attribs]
@@ -384,16 +394,21 @@ Created by Jake Hattwell
 
 
 
-    def memoryDump(self,saveAs = False):
+    def memory_dump(self,saveAs = False,mode="xlsx"):
         if saveAs:
             try:
-                folder = tk.filedialog.askdirectory()
+                self.folder = tk.filedialog.askdirectory()
             except:
                 pass
+
         files = len(self.workspace.tables)
         count = 1
+        
         for tablename,val in self.workspace.tables.items():
-            val.saveToExcel(folder + "\\"+tablename)
+            if mode == "xlsx":
+                val.save_to_excel(self.folder + "\\"+tablename)
+            elif mode == "tsv":
+                val.save_to_tsv(self.folder + "\\"+tablename)
             self.footer.config(width=self.master.winfo_width()*count/files,bg="green2")
             self.placeholder.config(width=self.master.winfo_width()*(files-count)/files)
             self.master.update()
@@ -403,6 +418,9 @@ Created by Jake Hattwell
         messagebox.showinfo("SBTabExplorer","Saved!")
         self.footer.config(width=0,bg=self.cs["LIGHT"])
         self.placeholder.config(bg=self.cs["LIGHT"],width=self.master.winfo_width(),height=16)
+        self.print_out("------------------------")
+        text = "Saved to " + self.folder + " in ." + mode + " format"
+        self.print_out(text)
 
 
 root = tk.Tk()
