@@ -1,1 +1,1 @@
-DARK_THEME = True  #True/False
+DARK_THEME = False  #True/False
