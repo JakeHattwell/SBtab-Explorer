@@ -16,7 +16,7 @@ import settings
 class MainApplication():
     def __init__(self,master):
         #configuring master
-        config = {"title":"SBTabExplorer", "version":"[Version: 1]"}
+        config = {"title":"SBTabExplorer", "version":"[Version: 1.0]"}
         self.master = master
         self.tkcss = [
             #light
@@ -68,6 +68,7 @@ class MainApplication():
 SBTabExplorer Version 1
 -----------------------
 Created by Jake Hattwell
+University of Queensland
 """
         help_menu.add_command(label="About", command=lambda title="SBTabExplorer",msg=text : messagebox.showinfo(title=title,message=msg))
         help_menu.add_command(label="GitHub (opens browser)",command=lambda url="https://github.com/jakehattwell/SBtab-explorer": webbrowser.open_new_tab(url))
