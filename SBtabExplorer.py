@@ -16,7 +16,7 @@ import settings
 class MainApplication():
     def __init__(self,master):
         #configuring master
-        config = {"title":"SBTabExplorer", "version":"[Version: 1.0]"}
+        config = {"title":"SBtab Explorer", "version":"[Version: 1.0]"}
         self.master = master
         self.tkcss = [
             #light
@@ -25,6 +25,7 @@ class MainApplication():
                 "DARK":"gray90",
                 "DARKER":"gray95",
                 "LIGHT":"gray75",
+                "LIGHTER":"gray35",
                 "CURSOR":"black"
             },
             #dark
@@ -33,6 +34,7 @@ class MainApplication():
                 "DARK":"gray15",
                 "DARKER":"gray10",
                 "LIGHT":"gray35",
+                "LIGHTER":"gray50",
                 "CURSOR":"white"
             }
             ]
@@ -44,38 +46,44 @@ class MainApplication():
         self.master.update()
         self.info = {} #dictionary to hold the label and button displays
         self.size = {} #dictionary holding sizes of the datasets
-        self.displayFields = {}
-        self.pages = {}
+        self.displayFields = {} #dict for fields in notebook pages
+        self.pages = {} #Dict to hold notebook pages
+        self.temp_id = 0 #Temp ID assigned to new entries in tables
+
+        #create menus
         self.menubar = tk.Menu(self.master)
         file_menu = tk.Menu(self.menubar,tearoff=0)
         open_menu = tk.Menu(file_menu,tearoff=0)
-        open_menu.add_command(label="Open XLSX", command=lambda x = "xlsx":self.open_folder(x))
         open_menu.add_command(label="Open TSV", command=lambda x = "tsv":self.open_folder(x))
+        open_menu.add_command(label="Open XLSX", command=lambda x = "xlsx":self.open_folder(x))
         file_menu.add_cascade(label="Open",menu=open_menu)
         save_menu = tk.Menu(file_menu,tearoff=0)
-        save_menu.add_command(label="Save XLSX", command= lambda x=False: self.memory_dump(x))
         save_menu.add_command(label="Save TSV", command= lambda x=False,mode="tsv": self.memory_dump(x,mode))
+        save_menu.add_command(label="Save XLSX", command= lambda x=False: self.memory_dump(x))
         file_menu.add_cascade(label="Save",menu=save_menu)
         saveas_menu = tk.Menu(file_menu,tearoff=0)
-        saveas_menu.add_command(label="Save As XLSX", command= lambda x=True: self.memory_dump(x))
         saveas_menu.add_command(label="Save As TSV", command= lambda x=True,mode="tsv": self.memory_dump(x,mode))
+        saveas_menu.add_command(label="Save As XLSX", command= lambda x=True: self.memory_dump(x))
         file_menu.add_cascade(label="Save As",menu=saveas_menu)
         file_menu.add_command(label="Submit",command=self.email_form)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=root.quit)
         help_menu = tk.Menu(self.menubar,tearoff=0)
+        
         text="""
-SBTabExplorer Version 1
+  Version 1
 -----------------------
 Created by Jake Hattwell
 University of Queensland
 """
-        help_menu.add_command(label="About", command=lambda title="SBTabExplorer",msg=text : messagebox.showinfo(title=title,message=msg))
+        help_menu.add_command(label="About", command=lambda title=" ",msg=text : messagebox.showinfo(title=title,message=msg))
         help_menu.add_command(label="GitHub (opens browser)",command=lambda url="https://github.com/jakehattwell/SBtab-explorer": webbrowser.open_new_tab(url))
         self.menubar.add_cascade(label="File", menu=file_menu)
+        
         self.menubar.add_cascade(label="Help",menu=help_menu)
         self.master.config(menu=self.menubar)
 
+        #create notebook layout
         self.notebook = ttk.Notebook(self.master)
         self.notebook.pack(fill=tk.BOTH,expand=True)
         #main display window
@@ -132,6 +140,11 @@ University of Queensland
         
 
     def open_folder(self,filetype):
+        """Opens a folder of SBtab files
+
+        type specified by filetype (tsv/xslx)
+        Creates a workspace, and redraws the layout of the program
+            """
         self.workspace = modelSystem(self)
         self.folder = tk.filedialog.askdirectory()
         success = self.workspace.load_folder(self.folder,filetype)
@@ -143,23 +156,35 @@ University of Queensland
             search_var.set("Search Text")
             self.search_box.bind('<FocusIn>', self.on_entry_click)
             self.search_box.bind('<FocusOut>', self.on_focusout)
-            self.search_box.bind('<Return>', self.search_model_interface)
-            self.search_box.grid(row = 0,column=0,sticky = "nesw")
+            self.search_box.bind('<Return>', self.search_model_data)
+            self.search_box.grid(row = 0,column=1,sticky = "nesw")
             self.search_label = tk.Label(self.search_frame,text="Type and press enter to search",bg=self.cs["LIGHT"],fg=self.cs["CURSOR"])
-            self.search_label.grid(row=0,column=1,sticky="nesw")
+            self.search_label.grid(row=0,column=2,sticky="nesw")
             
-            self.search_frame.columnconfigure(0,weight=3)
-            self.search_frame.columnconfigure(1,weight=1)
+            self.tools_button = tk.Menubutton(self.search_frame,text="Tools",bg=self.cs["BASE"],fg=self.cs["CURSOR"],relief="raised")
+            self.tools_menu = tk.Menu(self.tools_button,tearoff=0)
+            self.new_menu = tk.Menu(self.tools_menu,tearoff=0)
+
+            for i in self.workspace.tables:
+                self.new_menu.add_cascade(label=i,command=lambda x = i:self.new_entry(x))
+
+            self.tools_menu.add_cascade(label="New",menu=self.new_menu)
+            self.tools_button.config(menu=self.tools_menu)
+            self.tools_button.grid(row=0,column=0,sticky="nesw")
+
+            self.search_frame.columnconfigure(0,weight=0)
+            self.search_frame.columnconfigure(1,weight=3)
+            self.search_frame.columnconfigure(2,weight=1)
             self.search_frame.grid(row=0,sticky="nesw",columnspan=2)
             self.ui_frame.rowconfigure(0,weight=0)
             self.size = self.workspace.size
             self.size_text = "\n".join([str(key)+": "+str(val)+" entries" for key,val in self.size.items()])
             self.size_text = "\n".join(["Dataset has been loaded!",self.size_text])
-            messagebox.showinfo("SBTabExplorer",self.size_text)
+            messagebox.showinfo(" ",self.size_text)
             self.footer.config(width=0,bg=self.cs["LIGHT"])
             self.placeholder.config(bg=self.cs["LIGHT"],width=self.master.winfo_width(),height=16)
+            
             self.master.focus_set()
-
 
     def print_out(self,text):
         self.text_box.config(state=tk.NORMAL)
@@ -179,9 +204,12 @@ University of Queensland
     def on_focusout(self,event):
         if self.search_box.get() == '':
             self.search_box.insert(0, 'Search Text')
+        if settings.DARK_THEME:
             self.search_box.config(fg = self.cs["BASE"])
+        else:
+            self.search_box.config(fg = self.cs["LIGHTER"])
 
-    def search_model_interface(self,event=None):
+    def search_model_data(self,event=None):
 
         if self.search_box.get() != '':
             query = self.search_box.get()
@@ -197,6 +225,7 @@ University of Queensland
                     key = key
                     pass
             self.info = {}
+
             for key,result in results.items():
                 text = self.workspace.prettyPrint([result[0],result[1]])
                 self.info["key"+str(row)+"L"] = tk.Label(self.work_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg=self.cs["DARK"],fg=self.cs["CURSOR"],padx=10,pady=5)
@@ -207,18 +236,56 @@ University of Queensland
                 self.info["key"+str(row)+"B"].bind("<MouseWheel>", lambda event: self.work_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
                 self.info["key"+str(row)+"D"] = result[5]
                 row += 1
+
         self.master.update()
 
-    def _on_mousewheel(self, event):
-        self.work_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    def new_entry(self,entry_type): ###JUMP TEXT
+        temp_id = "["+str(self.temp_id)+"] New " + entry_type
+        table = entry_type
+        self.pages[temp_id] = tk.Frame(self.notebook)
+        self.pages[temp_id].config(bg=self.cs["DARK"])
+        headers = self.workspace.tables[table].headers
+        window_text=temp_id
+        self.pages[temp_id].columnconfigure(0,weight=3)
+        self.pages[temp_id].headers = headers
+        self.pages[temp_id].rowconfigure(0,weight=3)
+        self.pages[temp_id].columnconfigure(1,weight=2)
+        self.displayFields[window_text]={}
+        self.notebook.add(self.pages[temp_id],text=window_text,sticky="nesw")
+        row=0
+        info_frame = tk.Frame(self.pages[temp_id],bg=self.cs["DARK"])
+        info_frame.grid(row=0,column=0,sticky="NESW")
+        info_frame.columnconfigure(1,weight=1)
 
-    def on_frame_configure(self, event):
-        '''Reset the scroll region to encompass the inner frame'''
-        self.work_canvas.configure(scrollregion=self.work_canvas.bbox("all"))
+        row += 1
 
+        row += 1
+        # create fields
+        for header in headers:
+            fieldLabel = tk.Label(info_frame,text=header,justify="left",bg=self.cs["BASE"],fg=self.cs["CURSOR"],padx=5)
+            fieldLabel.grid(row=row,column=0,sticky="NESW")
+            text = tk.StringVar()
+            self.displayFields[window_text][header] = tk.Entry(info_frame,textvariable=text,bg=self.cs["DARK"],fg=self.cs["CURSOR"],disabledbackground=self.cs["DARK"],insertbackground=self.cs["CURSOR"])
+            text.set("")
+            self.displayFields[window_text][header].grid(row=row,column=1,sticky="NESW")
+            
+            row += 1
+        info_frame.rowconfigure(row,weight=10)
+        btn1 = tk.Button(info_frame,text="Save and Continue",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = lambda new=True,table=table:self.save_data(new=new,table=table)) #Buttons at top of window
+        btn1.grid(row=0,column=0,sticky="nesw",columnspan=2)
+        btn2 = tk.Button(info_frame,text="Exit",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = self.delete_tab)
+        btn2.grid(row=1,column=0,sticky="nesw",columnspan=2)
+        row += 1
+        print("Created new",entry_type) #traceback for sanity check
+        self.temp_id += 1
+        self.notebook.select(self.notebook.index("end")-1)
+        #results["-".join([table,ID])] = [table,ID,key,str(val),str(row),entry]
+        
+ 
     def display_data(self,data):
+        #check if tab already open
         if data[1] in self.pages:
-            q = messagebox.askquestion("SBtabExplorer","Entry already open! Did you want to jump to the tab?",icon = 'warning')
+            q = messagebox.askquestion(" ","Entry already open! Did you want to jump to the tab?",icon = 'warning')
             if q == 'yes':    
                 for i in self.notebook.tabs():
                     if self.notebook.tab(i,"text")==data[1]:
@@ -244,8 +311,8 @@ University of Queensland
             # btn2 = tk.Button(window,text="Save and Close") #,command = self.saveAndClose
             # btn2.grid(row=row,column=0,sticky="nesw")
             # row += 1
-            btn3 = tk.Button(info_frame,text="Exit",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = self.delete_tab)
-            btn3.grid(row=row,column=0,sticky="nesw",columnspan=2)
+            btn2 = tk.Button(info_frame,text="Exit",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = self.delete_tab)
+            btn2.grid(row=row,column=0,sticky="nesw",columnspan=2)
             row += 1
             for key,val in data[5].items():
                 if key != None:
@@ -291,51 +358,67 @@ University of Queensland
             tempwork_canvas.bind("<Configure>",lambda event: tempwork_canvas.configure(scrollregion=tempwork_canvas.bbox("all")))
 
             query = data[1]
-            results = self.workspace.searchModel(query)
-            row = 0
-            self.pages[data[1]+"data"] = {}
-            for key,result in results.items():
-                text = self.workspace.prettyPrint([result[0],result[1]])
-                self.pages[data[1]+"data"]["key"+str(row)+"L"] = tk.Label(tempwork_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg=self.cs["DARK"],fg=self.cs["CURSOR"],padx=10,pady=5)
-                self.pages[data[1]+"data"]["key"+str(row)+"L"].grid(row = row,column = 1,sticky="nesw",columnspan=1)
-                self.pages[data[1]+"data"]["key"+str(row)+"L"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
-                self.pages[data[1]+"data"]["key"+str(row)+"B"] = tk.Button(tempwork_frame,font=self.font,padx=10,text = "Open",justify="center",bd=2,relief="raised",anchor="e",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = lambda result=result:self.display_data(result)) #
-                self.pages[data[1]+"data"]["key"+str(row)+"B"].grid(row = row,column = 0,sticky="nesw")
-                self.pages[data[1]+"data"]["key"+str(row)+"B"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
-                self.pages[data[1]+"data"]["key"+str(row)+"D"] = result[5]
-                row += 1
-            if data[0] == "Reaction":
-                rxn  = data[5]["!ReactionFormula"]
-                for i in ["+","<","=",">"]:
-                    rxn = rxn.replace(i,"")
-                rxn = rxn.split(" ")
-                while "" in rxn:
-                    rxn.remove("")
-                for i in rxn:
-                    try:
-                        results = self.workspace.tables["Compound"].data[i]
-                        result = ["Compound",i,"","","",results]
-                        if results["!ID"] == i and "key"+results["!ID"]+"D" not in self.pages[data[1]+"data"]:
-                            text = self.workspace.prettyPrint(["Compound",results["!ID"]])
-                            self.pages[data[1]+"data"]["key"+str(row)+"mL"] = tk.Label(tempwork_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg=self.cs["DARK"],fg=self.cs["CURSOR"],padx=10,pady=5)
-                            self.pages[data[1]+"data"]["key"+str(row)+"mL"].grid(row = row,column = 1,sticky="nesw",columnspan=1)
-                            self.pages[data[1]+"data"]["key"+str(row)+"mL"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
-                            self.pages[data[1]+"data"]["key"+str(row)+"mB"] = tk.Button(tempwork_frame,font=self.font,padx=10,text = "Open",justify="center",bd=2,relief="raised",anchor="e",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = lambda result=result:self.display_data(result)) #
-                            self.pages[data[1]+"data"]["key"+str(row)+"mB"].grid(row = row,column = 0,sticky="nesw")
-                            self.pages[data[1]+"data"]["key"+str(row)+"mB"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
-                            self.pages[data[1]+"data"]["key"+str(row)+"mD"] = result[5]
-                            row += 1
-                    except:
-                        pass
+            if len(query) > 1:
+                results = self.workspace.searchModel(query)
+                row = 0
+                self.pages[data[1]+"data"] = {}
+                for key,result in results.items():
+                    text = self.workspace.prettyPrint([result[0],result[1]])
+                    self.pages[data[1]+"data"]["key"+str(row)+"L"] = tk.Label(tempwork_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg=self.cs["DARK"],fg=self.cs["CURSOR"],padx=10,pady=5)
+                    self.pages[data[1]+"data"]["key"+str(row)+"L"].grid(row = row,column = 1,sticky="nesw",columnspan=1)
+                    self.pages[data[1]+"data"]["key"+str(row)+"L"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
+                    self.pages[data[1]+"data"]["key"+str(row)+"B"] = tk.Button(tempwork_frame,font=self.font,padx=10,text = "Open",justify="center",bd=2,relief="raised",anchor="e",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = lambda result=result:self.display_data(result)) #
+                    self.pages[data[1]+"data"]["key"+str(row)+"B"].grid(row = row,column = 0,sticky="nesw")
+                    self.pages[data[1]+"data"]["key"+str(row)+"B"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
+                    self.pages[data[1]+"data"]["key"+str(row)+"D"] = result[5]
+                    row += 1
+                if data[0] == "Reaction":
+                    rxn  = data[5]["!ReactionFormula"]
+                    for i in ["+","<","=",">"]:
+                        rxn = rxn.replace(i,"")
+                    rxn = rxn.split(" ")
+                    while "" in rxn:
+                        rxn.remove("")
+                    for i in rxn:
+                        try:
+                            results = self.workspace.tables["Compound"].data[i]
+                            result = ["Compound",i,"","","",results]
+                            if results["!ID"] == i and "key"+results["!ID"]+"D" not in self.pages[data[1]+"data"]:
+                                text = self.workspace.prettyPrint(["Compound",results["!ID"]])
+                                self.pages[data[1]+"data"]["key"+str(row)+"mL"] = tk.Label(tempwork_frame,font=self.font,text=text,bd=2,relief="raised", justify="left",anchor="w",bg=self.cs["DARK"],fg=self.cs["CURSOR"],padx=10,pady=5)
+                                self.pages[data[1]+"data"]["key"+str(row)+"mL"].grid(row = row,column = 1,sticky="nesw",columnspan=1)
+                                self.pages[data[1]+"data"]["key"+str(row)+"mL"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
+                                self.pages[data[1]+"data"]["key"+str(row)+"mB"] = tk.Button(tempwork_frame,font=self.font,padx=10,text = "Open",justify="center",bd=2,relief="raised",anchor="e",fg=self.cs["CURSOR"],bg=self.cs["LIGHT"],command = lambda result=result:self.display_data(result)) #
+                                self.pages[data[1]+"data"]["key"+str(row)+"mB"].grid(row = row,column = 0,sticky="nesw")
+                                self.pages[data[1]+"data"]["key"+str(row)+"mB"].bind("<MouseWheel>", lambda event: tempwork_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
+                                self.pages[data[1]+"data"]["key"+str(row)+"mD"] = result[5]
+                                row += 1
+                        except:
+                            pass
             self.master.update()
+            self.delete_tab()
             self.notebook.select(self.notebook.index("end")-1)
             
 
-    def save_data(self):
-        for key in self.pages[self.notebook.tab(self.notebook.select(),"text")].data[5]:
-            # don't ask.
-            self.workspace.tables[self.pages[self.notebook.tab(self.notebook.select(),"text")].data[0]].data[self.pages[self.notebook.tab(self.notebook.select(),"text")].data[1]][key] = self.displayFields[self.pages[self.notebook.tab(self.notebook.select(),"text")].data[1]][key].get()
-        messagebox.showinfo("SBTabExplorer","Saved!\nMake sure you save using the File Menu as well.")
+    def save_data(self,new=False,table=False): ###JUMP TEXT
+        if new:
+            headers = self.pages[self.notebook.tab(self.notebook.select(),"text")].headers
+            idkey = self.displayFields[self.notebook.tab(self.notebook.select(),"text")][headers[0]].get()
+            if idkey not in self.workspace.tables[table].data:
+                self.workspace.tables[table].data[idkey] = {}
+                for header in headers:
+                    self.workspace.tables[table].data[idkey][header] = self.displayFields[self.notebook.tab(self.notebook.select(),"text")][header].get()
+                package = [table,idkey,0,0,0,self.workspace.tables[table].data[idkey]]
+                self.display_data(package)
+                self.notebook.select(self.notebook.index("end")-1)
+                messagebox.showinfo(" ","Saved!\nMake sure you save using the File Menu as well.")
+            else:
+                messagebox.showinfo(" ","ID already exists. Please use another.")
+        else:
+            for key in self.pages[self.notebook.tab(self.notebook.select(),"text")].data[5]:
+                # don't ask.
+                self.workspace.tables[self.pages[self.notebook.tab(self.notebook.select(),"text")].data[0]].data[self.pages[self.notebook.tab(self.notebook.select(),"text")].data[1]][key] = self.displayFields[self.pages[self.notebook.tab(self.notebook.select(),"text")].data[1]][key].get()
+            messagebox.showinfo(" ","Saved!\nMake sure you save using the File Menu as well.")
 
         
     def delete_tab(self):
@@ -365,7 +448,7 @@ University of Queensland
             widget.tk_focusNext().focus_set()
             return 'break'
             
-        config = {"title":"SBTabExplorer", "version":"[Version: 1]"}
+        config = {"title":" ", "version":"[Version: 1]"}
         popup = tk.Toplevel()
         popup.title(config["title"] + " " +config["version"])
         popup.focus_set()
@@ -416,13 +499,19 @@ University of Queensland
             self.master.update_idletasks()
             time.sleep(0.05)
             count+=1
-        messagebox.showinfo("SBTabExplorer","Saved!")
+        messagebox.showinfo(" ","Saved!")
         self.footer.config(width=0,bg=self.cs["LIGHT"])
         self.placeholder.config(bg=self.cs["LIGHT"],width=self.master.winfo_width(),height=16)
         self.print_out("------------------------")
         text = "Saved to " + self.folder + " in ." + mode + " format"
         self.print_out(text)
 
+    def _on_mousewheel(self, event):
+        self.work_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+    def on_frame_configure(self, event):
+        '''Reset the scroll region to encompass the inner frame'''
+        self.work_canvas.configure(scrollregion=self.work_canvas.bbox("all"))
 
 root = tk.Tk()
 myApp = MainApplication(root)
