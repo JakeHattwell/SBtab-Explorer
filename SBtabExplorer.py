@@ -432,7 +432,6 @@ University of Queensland
         self.pages.pop(name)
     
     def email_form(self):
-
         def _submit():
             responses = [objects[i+"E"].get(1.0,tk.END) for i in attribs]
             recipient = settings.EMAIL_SUBMISSION_ADDRESS
