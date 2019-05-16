@@ -16,7 +16,7 @@ import settings
 class MainApplication():
     def __init__(self,master):
         #configuring master
-        config = {"title":"SBtab Explorer", "version":"[Version: 1.0]"}
+        config = {"title":"SBtab Explorer", "version":"[Version: 0.1.0]"}
         self.master = master
         self.tkcss = [
             #light
@@ -65,7 +65,8 @@ class MainApplication():
         saveas_menu.add_command(label="Save As TSV", command= lambda x=True,mode="tsv": self.memory_dump(x,mode))
         saveas_menu.add_command(label="Save As XLSX", command= lambda x=True: self.memory_dump(x))
         file_menu.add_cascade(label="Save As",menu=saveas_menu)
-        file_menu.add_command(label="Submit",command=self.email_form)
+        if settings.EMAIL_SUBMISSION_ENABLED:
+            file_menu.add_command(label="Submit",command=self.email_form)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=root.quit)
         help_menu = tk.Menu(self.menubar,tearoff=0)
@@ -282,7 +283,7 @@ University of Queensland
         #results["-".join([table,ID])] = [table,ID,key,str(val),str(row),entry]
         
  
-    def display_data(self,data):
+    def display_data(self,data,jump=False):
         #check if tab already open
         if data[1] in self.pages:
             q = messagebox.askquestion(" ","Entry already open! Did you want to jump to the tab?",icon = 'warning')
@@ -395,8 +396,10 @@ University of Queensland
                                 row += 1
                         except:
                             pass
+            if jump:
+                self.delete_tab()
             self.master.update()
-            self.delete_tab()
+            
             self.notebook.select(self.notebook.index("end")-1)
             
 
@@ -409,7 +412,7 @@ University of Queensland
                 for header in headers:
                     self.workspace.tables[table].data[idkey][header] = self.displayFields[self.notebook.tab(self.notebook.select(),"text")][header].get()
                 package = [table,idkey,0,0,0,self.workspace.tables[table].data[idkey]]
-                self.display_data(package)
+                self.display_data(package,jump=True)
                 self.notebook.select(self.notebook.index("end")-1)
                 messagebox.showinfo(" ","Saved!\nMake sure you save using the File Menu as well.")
             else:
@@ -432,7 +435,7 @@ University of Queensland
 
         def _submit():
             responses = [objects[i+"E"].get(1.0,tk.END) for i in attribs]
-            recipient = 'submit@wormjam.life'
+            recipient = settings.EMAIL_SUBMISSION_ADDRESS
             subject = '[Curation Submission]'
 
             body = """Please attach the files to this email\n----------------------------------------------------"""
@@ -448,7 +451,7 @@ University of Queensland
             widget.tk_focusNext().focus_set()
             return 'break'
             
-        config = {"title":" ", "version":"[Version: 1]"}
+        config = {"title":" ", "version":"[Version: 0.1.0]"}
         popup = tk.Toplevel()
         popup.title(config["title"] + " " +config["version"])
         popup.focus_set()
@@ -456,7 +459,7 @@ University of Queensland
         data_frame.pack(fill=tk.BOTH,expand=True)
         data_frame.columnconfigure(0,weight=1)
         data_frame.columnconfigure(1,weight=3)
-        info_label = tk.Label(data_frame,self.cs["DARK"],fg=self.cs["CURSOR"],text="Enter your details")
+        info_label = tk.Label(data_frame,bg=self.cs["DARK"],fg=self.cs["CURSOR"],text="Enter your details")
         info_label.grid(row=0,column=0,columnspan=2)
         
         objects = {}
