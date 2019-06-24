@@ -3,7 +3,7 @@
 A python GUI for working with SBtab files. 
 Published early to allow for use, but code cleaning is currently underway.
 
-![](https://img.shields.io/badge/version-0.1.0-yellow.svg) [![License](http://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
+![](https://img.shields.io/badge/version-0.1.1-yellow.svg) [![License](http://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
