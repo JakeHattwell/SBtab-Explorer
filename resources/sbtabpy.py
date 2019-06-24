@@ -191,8 +191,7 @@ class dataset:
                 newWs.cell(row=row,column=col).value = val[i]
                 col += 1
             row += 1
-        if hasattr(self,"freeze_panes"):
-            newWs.freeze_panes = self.freeze_panes
+
         newWb.save(name+'-SBtab.xlsx')
 
     def save_to_tsv(self,name):
@@ -200,7 +199,16 @@ class dataset:
         for key,entry in self.data.items():
             insertion = [key]
             for header in self.headers[1:]:
-                insertion.append(entry[header])
+                if header != "!Charge":
+                    insertion.append(entry[header])
+                else:
+                    if entry[header] == 0 or entry[header]:
+                        try:
+                            insertion.append(int(entry[header]))
+                        except:
+                            print(key)
+                    else:
+                        insertion.append("")
             array.append(insertion)
         with open(name+"-SBtab.tsv","w",encoding="utf-8",newline='') as tsvfile:
             output = csv.writer(tsvfile,dialect="excel",delimiter="\t")

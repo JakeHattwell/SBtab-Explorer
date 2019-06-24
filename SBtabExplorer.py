@@ -121,9 +121,6 @@ University of Queensland
         self.work_frame.bind("<Configure>", self.on_frame_configure)
         self.work_canvas.bind("<MouseWheel>", lambda event: self.work_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
         self.work_frame.bind("<MouseWheel>", lambda event: self.work_canvas.yview_scroll(int(-1*(event.delta/90)), "units"))
-
-        self.CanvasActive = False
-
         self.tool_frame = tk.Frame(self.window_frame,bd=2,relief=tk.SUNKEN,highlightbackground=self.cs["LIGHT"],highlightcolor=self.cs["DARKER"],bg=self.cs["BASE"])
         self.tool_frame.grid(row=0,column=1,sticky="nesw")
 
